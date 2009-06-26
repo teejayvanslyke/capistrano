@@ -102,8 +102,10 @@ module Capistrano
         # each connection is done in parallel.
         connection_factory
 
-        threads = Array(servers).map { |server| establish_connection_to(server, failed_servers) }
-        threads.each { |t| t.join }
+        # Parallel connections fail in Ruby 1.8.7 patchlevel 160+.  Let's use synchronous ones.
+        #
+        # Thanks to https://capistrano.lighthouseapp.com/projects/8716/tickets/79-capistrano-hangs-on-shell-command-for-many-computers-on-ruby-186-p368
+        Array(servers).each { |server| safely_establish_connection_to(server, failed_servers) }
 
         if failed_servers.any?
           errors = failed_servers.map { |h| "#{h[:server]} (#{h[:error].class}: #{h[:error].message})" }
